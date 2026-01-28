@@ -1,0 +1,117 @@
+\section{Particionamiento en Apache Spark}
+
+Durante el procesamiento de grandes volúmenes de información mediante sistemas distribuidos como Apache Spark, es frecuente observar la generación de múltiples archivos físicos como resultado de una operación de escritura. En el caso del conjunto de datos de viajes de taxis de la ciudad de Nueva York, un número reducido de archivos Parquet de entrada puede producir decenas o incluso cientos de archivos de salida identificados con la nomenclatura \texttt{part-00000}, \texttt{part-00001}, entre otros.
+
+Este comportamiento suele generar confusión en usuarios que provienen de entornos tradicionales de bases de datos o procesamiento monolítico. Sin embargo, la fragmentación de archivos no constituye un error ni una mala práctica, sino que es una consecuencia directa del modelo de ejecución paralela de Spark y un requisito fundamental para alcanzar escalabilidad y alto rendimiento.
+
+\subsection{Fundamentos del Procesamiento Paralelo}
+
+Apache Spark se basa en un modelo de computación distribuida que divide los datos en unidades lógicas denominadas \textbf{particiones}. Una partición representa el subconjunto mínimo de datos que puede ser procesado de manera independiente dentro del clúster.
+
+El paralelismo en Spark se define a nivel de partición, ya que:
+
+\begin{itemize}
+    \item cada partición es procesada por una única tarea (\textit{task}),
+    \item cada tarea se ejecuta sobre un núcleo (\textit{core}) de CPU,
+    \item múltiples tareas pueden ejecutarse simultáneamente en diferentes nodos del clúster.
+\end{itemize}
+
+De esta manera, el grado de paralelismo del sistema se encuentra directamente relacionado con el número de particiones y la cantidad de núcleos disponibles en los \textit{Spark Workers}. Este enfoque permite distribuir la carga computacional y maximizar el aprovechamiento del hardware disponible.
+
+\subsection{Relación entre Particiones y Ejecución de Tareas}
+
+Durante la ejecución de un job, Spark construye un \textit{Directed Acyclic Graph} (DAG) que describe las transformaciones y acciones a realizar. A partir de este grafo:
+
+\begin{itemize}
+    \item los datos se dividen en particiones lógicas,
+    \item cada partición se asigna a una tarea independiente,
+    \item las tareas se distribuyen dinámicamente entre los ejecutores disponibles.
+\end{itemize}
+
+Este modelo permite que el procesamiento escale horizontalmente, ya que el incremento del número de nodos o núcleos disponibles reduce proporcionalmente el tiempo total de ejecución, siempre que exista un número suficiente de particiones.
+
+\subsection{Mecánica de la Generación de Archivos \texttt{part-XXXX}}
+
+Cuando Spark escribe los resultados de una operación hacia HDFS u otro sistema de archivos distribuido, cada tarea paralela genera su propio archivo de salida. En consecuencia, existe una relación directa entre el número de particiones finales y la cantidad de archivos producidos.
+
+\textit{Ejemplo práctico:}
+
+Supóngase un clúster configurado con:
+
+\begin{itemize}
+    \item 2 nodos \textit{Spark Worker},
+    \item 2 núcleos de CPU por nodo.
+\end{itemize}
+
+Esto proporciona una capacidad total de ejecución concurrente de 4 tareas paralelas.
+
+Durante el procesamiento de un archivo mensual correspondiente al año 2025:
+
+\begin{enumerate}
+    \item Spark divide el conjunto de datos en 4 particiones lógicas.
+    \item Cada partición es asignada a un núcleo distinto.
+    \item Al ejecutar la operación de escritura:
+    \begin{itemize}
+        \item la tarea 1 genera el archivo \texttt{part-00000},
+        \item la tarea 2 genera \texttt{part-00001},
+        \item las tareas restantes generan los archivos correspondientes.
+    \end{itemize}
+\end{enumerate}
+
+Como resultado, un único archivo de entrada puede transformarse en múltiples archivos de salida. Este comportamiento es completamente \textbf{esperado, controlado y deseable}, ya que permite mantener el paralelismo incluso durante la fase de persistencia.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{assets/images/esquema_particionamiento.png}
+    \caption{Esquema conceptual de la paralelización de escritura en HDFS mediante particionamiento.}
+    \label{fig:particionamiento}
+\end{figure}
+
+\subsection{Importancia del Particionamiento en Datos Históricos (2009--2025)}
+
+El proyecto trabaja con un conjunto de datos de carácter longitudinal que se incrementa anualmente desde el año 2009 hasta 2025. En este contexto, el particionamiento no solo mejora el rendimiento, sino que se convierte en un requisito estructural del sistema.
+
+\subsubsection{Optimización de Lectura Paralela}
+
+Al almacenar la información distribuida en múltiples archivos físicos, Spark puede ejecutar procesos de lectura simultánea sobre distintos nodos del clúster.
+
+Si todo el histórico se almacenara en un único archivo de gran tamaño —por ejemplo, un archivo de 500 GB—, un solo nodo debería leerlo de manera secuencial, generando un cuello de botella significativo. En contraste, al encontrarse particionado:
+
+\begin{itemize}
+    \item múltiples nodos pueden leer diferentes archivos al mismo tiempo,
+    \item el ancho de banda agregado del clúster se incrementa,
+    \item el tiempo total de procesamiento se reduce de forma considerable.
+\end{itemize}
+
+Por ejemplo, diez nodos leyendo 50 GB cada uno permiten procesar el mismo volumen de datos en una fracción del tiempo requerido por un único nodo.
+
+\subsubsection{Gestión Eficiente de Memoria}
+
+El particionamiento permite a Spark manejar volúmenes de datos muy superiores a la memoria RAM disponible en una máquina individual. El motor de ejecución carga únicamente las particiones necesarias para cada operación, procesándolas de forma secuencial o paralela según los recursos disponibles.
+
+Este mecanismo habilita el procesamiento de conjuntos de datos de escala terabyte utilizando hardware convencional, al apoyarse en:
+
+\begin{itemize}
+    \item evaluación perezosa (\textit{lazy evaluation}),
+    \item persistencia selectiva en memoria,
+    \item intercambio dinámico entre memoria y disco.
+\end{itemize}
+
+\subsection{Buenas Prácticas de Particionamiento}
+
+Durante el desarrollo del proyecto se adoptaron prácticas recomendadas para optimizar el rendimiento del clúster:
+
+\begin{itemize}
+    \item particionamiento lógico por año y mes,
+    \item control explícito del número de particiones mediante \texttt{repartition()} y \texttt{coalesce()},
+    \item balance entre paralelismo y sobrecarga de archivos pequeños,
+    \item uso de formatos columnar como Parquet para maximizar eficiencia.
+\end{itemize}
+
+Estas decisiones permiten mantener un equilibrio adecuado entre rendimiento, escalabilidad y facilidad de mantenimiento del sistema.
+
+\subsection{Síntesis del Enfoque}
+
+En conclusión, la generación de múltiples archivos \texttt{part-XXXX} constituye una característica inherente al modelo de ejecución distribuida de Apache Spark. Lejos de representar una desventaja, este comportamiento habilita el paralelismo, optimiza el uso de recursos y garantiza la escalabilidad del sistema frente al crecimiento continuo del volumen de datos históricos.
+
+El particionamiento adecuado resulta, por tanto, un componente esencial para el procesamiento eficiente del dataset NYC Taxi y para la correcta operación de la arquitectura Big Data propuesta.

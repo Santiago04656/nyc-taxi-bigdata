@@ -1,0 +1,118 @@
+\section{Analítica Avanzada y Métricas (Fase 2)}
+
+La Fase 2 del proyecto representó una evolución significativa de la plataforma, transformándola de un repositorio de almacenamiento y procesamiento masivo de datos hacia un sistema de analítica avanzada orientado a la generación de conocimiento estratégico. En esta etapa, el Grupo 3 se enfocó en la explotación del valor informacional contenido en los datos históricos de viajes de taxis de la ciudad de Nueva York.
+
+Para cumplir este objetivo, se desarrolló un nuevo job de procesamiento distribuido en Apache Spark, denominado \texttt{analytics\_advanced.py}, encargado de calcular métricas analíticas de alto nivel. Paralelamente, se amplió la capa de servicio mediante la incorporación de una segunda versión de la API REST (\texttt{/api/v2}), diseñada específicamente para exponer indicadores consolidados y optimizados para consumo visual.
+
+Esta fase consolidó el enfoque \textit{data-driven}, permitiendo que las decisiones analíticas se basen en datos procesados previamente, evitando cálculos en tiempo real y garantizando tiempos de respuesta óptimos.
+
+\subsection{Definición de Métricas Clave}
+
+Las métricas implementadas fueron seleccionadas bajo criterios de relevancia operativa, interpretabilidad y aplicabilidad en contextos reales de gestión del transporte urbano. En conjunto, estas métricas permiten analizar el comportamiento temporal, económico y geoespacial del sistema de movilidad.
+
+Se definieron cinco dimensiones analíticas principales, descritas a continuación.
+
+\subsubsection{1. Evolución Temporal de la Demanda}
+
+\textbf{Objetivo:}  
+Identificar patrones de comportamiento, estacionalidad y tendencias en la demanda del servicio a lo largo del tiempo.
+
+\begin{itemize}
+    \item \textbf{Método de cálculo:}  
+    Agregación diaria del número total de viajes y cálculo del valor promedio de la tarifa por día, utilizando operaciones \texttt{groupBy} y funciones de agregación distribuidas de Spark.
+
+    \item \textbf{Endpoint asociado:}  
+    \texttt{/trips-over-time}
+
+    \item \textbf{Valor analítico:}  
+    Esta métrica permite detectar periodos atípicos de disminución o incremento de la demanda, como eventos extraordinarios, feriados, cambios regulatorios o crisis sanitarias, proporcionando una visión longitudinal del comportamiento del sistema.
+\end{itemize}
+
+\subsubsection{2. Preferencias de Pago del Usuario}
+
+\textbf{Objetivo:}  
+Analizar la adopción y evolución de los métodos de pago electrónicos frente al uso de efectivo.
+
+\begin{itemize}
+    \item \textbf{Método de cálculo:}  
+    Conteo y normalización porcentual de los viajes agrupados por el atributo \texttt{payment\_type}. Los códigos numéricos originales del dataset fueron transformados en descripciones semánticas legibles (por ejemplo, 1 = Tarjeta de crédito, 2 = Efectivo).
+
+    \item \textbf{Endpoint asociado:}  
+    \texttt{/payment-stats}
+
+    \item \textbf{Insight generado:}  
+    Permite evaluar el nivel de digitalización del sistema de transporte y facilita la toma de decisiones relacionadas con la incorporación de nuevos mecanismos de cobro electrónico.
+\end{itemize}
+
+\subsubsection{3. Zonas de Alta Densidad de Viajes (Hotspots)}
+
+\textbf{Objetivo:}  
+Identificar espacialmente las áreas con mayor concentración de demanda.
+
+\begin{itemize}
+    \item \textbf{Método de cálculo:}  
+    Ranking de las zonas de recogida (\texttt{PULocationID}) mediante un conteo descendente del volumen total de viajes, generando un listado \textit{Top N}.
+
+    \item \textbf{Endpoint asociado:}  
+    \texttt{/top-zones}
+
+    \item \textbf{Utilidad operativa:}  
+    Esta métrica permite optimizar la distribución de flotas, reducir tiempos de espera y mejorar la cobertura del servicio en zonas de alta actividad.
+\end{itemize}
+
+\subsubsection{4. Análisis del Comportamiento de Propinas}
+
+\textbf{Objetivo:}  
+Evaluar la relación existente entre la distancia recorrida y el porcentaje de propina otorgado al conductor.
+
+\begin{itemize}
+    \item \textbf{Método de cálculo:}  
+    Segmentación de los viajes en intervalos de distancia (\textit{bins}), tales como 0--5 millas, 5--10 millas y rangos superiores, seguida del cálculo del porcentaje promedio de propina respecto al valor total del viaje.
+
+    \item \textbf{Endpoint asociado:}  
+    \texttt{/tip-analysis}
+
+    \item \textbf{Insight analítico:}  
+    Permite determinar si los viajes de mayor longitud influyen positivamente en la propensión del usuario a otorgar gratificaciones adicionales.
+\end{itemize}
+
+\subsubsection{5. Distribución de Distancias de Viaje}
+
+\textbf{Objetivo:}  
+Caracterizar la naturaleza del servicio ofrecido, diferenciando entre trayectos cortos, medianos y de largo recorrido.
+
+\begin{itemize}
+    \item \textbf{Método de cálculo:}  
+    Construcción de un histograma de frecuencias de la variable \texttt{trip\_distance}, permitiendo visualizar la concentración de viajes por rango de distancia.
+
+    \item \textbf{Endpoint asociado:}  
+    \texttt{/distance-distribution}
+
+    \item \textbf{Aplicación práctica:}  
+    Facilita la comprensión del perfil promedio del viaje urbano y respalda decisiones relacionadas con tarifas, planificación vial y asignación de recursos.
+\end{itemize}
+
+\subsection{Endpoint Unificado de Monitoreo del Sistema}
+
+Con el objetivo de optimizar el rendimiento del Dashboard principal y reducir la cantidad de solicitudes HTTP realizadas desde el cliente, se implementó el endpoint consolidado:
+
+\begin{center}
+\texttt{/system-stats}
+\end{center}
+
+Este endpoint se caracteriza por integrar información proveniente de tres fuentes heterogéneas dentro de una única respuesta JSON:
+
+\begin{enumerate}
+    \item \textbf{Infraestructura:}  
+    Consulta en tiempo real a las métricas JMX del NameNode para obtener información sobre nodos activos, bloques replicados y posibles inconsistencias del clúster.
+
+    \item \textbf{Almacenamiento:}  
+    Cálculo del uso de disco correspondiente al directorio \texttt{/data/nyc}, incluyendo capacidad total, espacio utilizado y disponibilidad restante.
+
+    \item \textbf{Indicadores de negocio:}  
+    Consolidación del número total histórico de viajes procesados por la plataforma.
+\end{enumerate}
+
+La integración de estas métricas técnicas y analíticas proporciona una visión holística del sistema, permitiendo evaluar simultáneamente el estado de la infraestructura y el valor del conjunto de datos procesados.
+
+Esta fase consolida a la plataforma desarrollada por el Grupo 3 como una solución de analítica Big Data completa, capaz de transformar grandes volúmenes de información en conocimiento accionable.

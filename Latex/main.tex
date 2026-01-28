@@ -1,0 +1,96 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{longtable}
+\usepackage{float}
+
+% Configuración de márgenes
+\geometry{top=2.5cm, bottom=2.5cm, left=3cm, right=3cm}
+
+% Configuración de encabezados y pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textit{Análisis de Movilidad Urbana en NYC mediante Big Data}}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{\textit{Taller 1}}
+
+% Formato de títulos
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+
+% Configuración del índice
+\usepackage{tocloft}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftsubsecfont}{\itshape}
+\renewcommand{\cfttoctitlefont}{\Large\bfseries}
+
+% Configuración de listings
+\usepackage{xcolor}
+
+\lstset{
+    inputencoding=utf8,
+    extendedchars=true,
+    literate={├}{{\textbar}}1
+             {─}{{\textendash}}1
+             {│}{{\textbar}}1
+             {└}{{\textbar}}1,
+    basicstyle=\ttfamily\footnotesize, % Fuente monoespaciada y tamaño pequeño
+    keywordstyle=\bfseries\color{blue}, % Palabras clave en negrita y azul
+    commentstyle=\itshape\color{green!50!black}, % Comentarios en cursiva y verde oscuro
+    stringstyle=\color{red}, % Cadenas en rojo
+    numberstyle=\tiny\color{gray}, % Números de línea en gris y tamaño pequeño
+    backgroundcolor=\color{gray!10}, % Fondo gris claro
+    frame=shadowbox, % Marco sombreado
+    rulesepcolor=\color{gray!20}, % Color del borde interno del marco
+    breaklines=true, % Permitir líneas largas divididas
+    numbers=left, % Numeración de líneas a la izquierda
+    captionpos=b, % Posición del título del código (abajo)
+    showspaces=false, % No mostrar espacios como símbolos
+    showstringspaces=false, % No mostrar espacios en cadenas
+    tabsize=4, % Tamaño del tabulador
+    morekeywords={self, with, as}, % Agregar más palabras clave si es necesario
+}
+
+\begin{document}
+
+% Portada: Proyecto NYC Taxi Big Data Analytics
+\input{tex/00_preliminares/portada}
+
+% Abstract: Resumen de la solución End-to-End
+\include{tex/00_preliminares/resumen}
+
+% Índice
+\tableofcontents
+\newpage
+
+% Secciones del documento
+\input{tex/01_introduccion/introduccion} % Objetivos y visión general
+
+% --- Bloque de Infraestructura y Procesamiento ---
+\input{tex/02_infraestructura/arquitectura_sistema}    % Docker, Hadoop y Spark
+\input{tex/02_infraestructura/pipeline_datos_etl}     % Ingesta, Limpieza y Analítica
+\input{tex/02_infraestructura/particionamiento_spark}  % Explicación técnica de archivos part-XXXX
+
+% --- Bloque de Capas de Aplicación ---
+\input{tex/03_aplicacion/api_rest_nodejs}        % Capa de servicio y lectura de HDFS 
+\input{tex/03_aplicacion/dashboard_frontend}     % Visualización con Next.js y Tailwind
+
+% --- Bloque de Operación y Resultados ---
+\input{tex/04_resultados/analitica_avanzada}     % Métricas y endpoints V2
+\input{tex/04_resultados/resolucion_incidencias} % Estabilización del entorno (Fase 1)
+
+\input{tex/05_conclusiones/conclusiones}           % Logros de las Fases 1 y 2
+
+\input{tex/99_referencias/bibliografia}
+
+\input{tex/99_referencias/anexos}  % Referencias a enlaces externos de repositorios
+
+\end{document}

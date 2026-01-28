@@ -1,0 +1,93 @@
+\section{Resolución de Incidencias y Estabilización (Fase 1)}
+
+Durante la Fase 1 del proyecto se abordó la construcción y estabilización de la infraestructura base del ecosistema Big Data. Esta etapa estuvo marcada por la aparición de múltiples incidencias técnicas propias de entornos distribuidos, especialmente al integrar contenedores Docker, Hadoop y Apache Spark.
+
+El análisis, diagnóstico y resolución de estos problemas fue determinante para garantizar la confiabilidad, escalabilidad y tolerancia a fallos del sistema final. En esta sección se documentan las incidencias críticas más relevantes y las soluciones de ingeniería implementadas por el Grupo 3.
+
+\subsection{Incidencia 1: Fallo de Registro de DataNodes}
+
+\textbf{Síntoma:}  
+Tras el arranque inicial del clúster, la interfaz web del NameNode mostraba el mensaje:
+
+\begin{center}
+\textit{0 datanode(s) running}
+\end{center}
+
+Este comportamiento se presentaba aun cuando el contenedor \texttt{hadoop-datanode} se encontraba activo. Los registros de ejecución (\textit{logs}) evidenciaban múltiples errores de conexión rechazada (\texttt{Connection Refused}).
+
+\textbf{Diagnóstico:}  
+Se determinó que el problema se originaba en la resolución incorrecta del nodo maestro dentro de la red interna de Docker. El DataNode intentaba conectarse al NameNode utilizando la dirección de \textit{loopback} local (\texttt{localhost}), lo cual impedía la comunicación entre contenedores independientes.
+
+Este comportamiento se debía a una configuración incompleta del parámetro \texttt{fs.defaultFS} dentro de la imagen base de Hadoop utilizada.
+
+\textbf{Solución:}  
+Para resolver la incidencia, se forzó explícitamente la definición del sistema de archivos distribuido mediante la variable de entorno correspondiente dentro del archivo \texttt{docker-compose.yml}:
+
+\begin{lstlisting}[language=bash, caption=Configuración corregida en docker-compose.yml]
+environment:
+  - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:8020
+\end{lstlisting}
+
+Esta modificación obligó a los DataNodes a resolver correctamente el servicio DNS interno \texttt{hadoop-namenode}, restableciendo la comunicación entre nodos y permitiendo la correcta replicación y distribución de bloques en HDFS.
+
+Como resultado, el clúster quedó operativo y visible desde la consola administrativa del NameNode.
+
+\subsection{Incidencia 2: Incompatibilidad de Esquema (Schema Drift)}
+
+\textbf{Síntoma:}  
+Durante la ejecución del proceso de limpieza de datos (\texttt{clean\_data.py}), los jobs de Spark fallaban al procesar archivos correspondientes a los años 2024 y 2025, mientras que los datos históricos anteriores (por ejemplo, 2015) se procesaban correctamente.
+
+Los errores arrojados correspondían a excepciones del tipo:
+
+\begin{center}
+\texttt{AnalysisException: Column not found}
+\end{center}
+
+\textbf{Diagnóstico:}  
+El análisis reveló un fenómeno conocido como \textit{Schema Drift} o evolución del esquema. A lo largo del tiempo, la entidad proveedora de datos modificó la estructura del dataset:
+
+\begin{itemize}
+    \item \textbf{Registros antiguos (2009--2016):}  
+    Utilizaban coordenadas geográficas explícitas mediante los campos \texttt{pickup\_longitude} y \texttt{pickup\_latitude}.
+
+    \item \textbf{Registros recientes (2017--2025):}  
+    Eliminan las coordenadas GPS por razones de privacidad y adoptan identificadores de zona (\texttt{PULocationID}).
+\end{itemize}
+
+El script original asumía la existencia obligatoria de campos GPS, provocando fallos al intentar acceder a columnas inexistentes.
+
+\textbf{Solución:}  
+Se realizó una refactorización completa del proceso de transformación, incorporando lógica dinámica de detección de esquema. El nuevo enfoque permite:
+
+\begin{itemize}
+    \item Verificar la existencia de columnas antes de su utilización.
+    \item Aplicar transformaciones condicionales según el tipo de dataset.
+    \item Normalizar todos los registros hacia un modelo común basado en \texttt{PULocationID}.
+\end{itemize}
+
+Esta solución permitió procesar de forma homogénea el histórico completo desde 2009 hasta 2025, garantizando compatibilidad futura ante posibles cambios adicionales en la fuente de datos.
+
+\subsection{Incidencia 3: Automatización y Recuperación Operativa}
+
+\textbf{Desafío:}  
+Durante las primeras ejecuciones del sistema se identificó una alta dependencia de comandos manuales, lo cual incrementaba el riesgo de errores humanos, tales como:
+
+\begin{itemize}
+    \item Omisión en la creación de directorios HDFS.
+    \item Ejecución de jobs en orden incorrecto.
+    \item Procesamiento de datos sin validación previa del entorno.
+\end{itemize}
+
+Estas situaciones podían provocar pérdidas de tiempo, ejecuciones inconsistentes o corrupción lógica del pipeline.
+
+\textbf{Solución:}  
+Para mitigar estos riesgos se desarrolló una suite de scripts de automatización, entre los que destacan:
+
+\begin{itemize}
+    \item \texttt{verify\_env.bat}: valida el estado de los contenedores, la conectividad del NameNode y la existencia de rutas críticas en HDFS.
+    \item \texttt{pipeline\_update.bat}: orquesta de forma secuencial la carga de nuevos datos, la limpieza, el reprocesamiento analítico y la actualización del Dashboard.
+\end{itemize}
+
+Estos scripts funcionan como mecanismos de control preventivo, actuando como “guardianes operativos” que aseguran el cumplimiento de las precondiciones antes de ejecutar procesos críticos.
+
+Gracias a esta automatización, la plataforma alcanzó un alto nivel de estabilidad, repetibilidad y tolerancia ante fallos operativos, consolidando una base sólida para las fases posteriores del proyecto.

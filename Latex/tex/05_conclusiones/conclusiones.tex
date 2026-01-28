@@ -1,0 +1,43 @@
+\section{Conclusiones}
+
+El desarrollo e implementación del proyecto \textit{``NYC Taxi Big Data Analytics''} permitió al Grupo 3 validar de manera empírica los principios fundamentales de las arquitecturas distribuidas modernas frente a un escenario real caracterizado por altos volúmenes de datos, heterogeneidad estructural y requerimientos analíticos complejos.
+
+A lo largo del proyecto se integraron múltiples tecnologías del ecosistema Big Data, demostrando que, mediante una adecuada planificación arquitectónica y una correcta orquestación de componentes, es posible transformar grandes volúmenes de información cruda en conocimiento accionable para la toma de decisiones.
+
+\subsection{Logros de la Fase 1: Estabilización e Infraestructura}
+
+Durante la primera fase, el esfuerzo del equipo se orientó a la construcción de una base tecnológica sólida, confiable y extensible, sobre la cual se sustentó todo el desarrollo posterior.
+
+\begin{itemize}
+    \item \textbf{Estabilidad Operativa:}  
+    Se logró implementar y estabilizar un clúster distribuido de Hadoop y Apache Spark basado en contenedores Docker, superando fallos críticos de comunicación entre nodos. La correcta configuración de redes virtuales, resolución DNS interna y variables de entorno de HDFS resultó determinante para garantizar la operación continua del sistema.
+
+    \item \textbf{Automatización de Procesos:}  
+    La incorporación de scripts de orquestación permitió estandarizar el ciclo completo de ingestión, procesamiento y actualización analítica. Esta automatización redujo significativamente la dependencia de operaciones manuales, incrementando la reproducibilidad, confiabilidad y mantenibilidad del entorno.
+
+    \item \textbf{Integridad y Consistencia del Dato:}  
+    El proyecto enfrentó exitosamente el fenómeno de \textit{Schema Drift} presente en el conjunto de datos históricos de NYC Taxi. Mediante la refactorización de los procesos ETL se logró unificar estructuras heterogéneas de más de quince años de información, garantizando consistencia analítica y trazabilidad del dato.
+\end{itemize}
+
+\subsection{Logros de la Fase 2: Analítica y Generación de Valor}
+
+La segunda fase consolidó la plataforma como un sistema de inteligencia analítica, trascendiendo el simple almacenamiento de información.
+
+\begin{itemize}
+    \item \textbf{Democratización del Acceso a la Información:}  
+    A través del desarrollo de una API REST y un Dashboard interactivo, se logró exponer grandes volúmenes de datos históricos de forma accesible y comprensible para usuarios no técnicos, reduciendo la brecha entre la ingeniería de datos y la toma de decisiones.
+
+    \item \textbf{Optimización del Rendimiento Analítico:}  
+    La estrategia de pre-agregación mediante Apache Spark permitió desacoplar el procesamiento pesado del consumo final. Como resultado, las consultas analíticas alcanzaron tiempos de respuesta del orden de milisegundos, demostrando la eficiencia del enfoque adoptado frente a modelos de consulta directa sobre datos crudos.
+
+    \item \textbf{Arquitectura de Referencia End-to-End:}  
+    El sistema desarrollado constituye una prueba de concepto exitosa de integración de tecnologías \textit{Open Source} —Hadoop, Spark, Docker, Node.js y herramientas de visualización— dentro de una arquitectura coherente, escalable y alineada con buenas prácticas de la ingeniería de datos moderna.
+\end{itemize}
+
+\subsection{Conclusión General}
+
+El proyecto cumplió satisfactoriamente con los objetivos generales y específicos planteados, evidenciando que es viable construir plataformas de Big Data escalables, tolerantes a fallos y de alto rendimiento utilizando software libre y recursos de hardware convencionales.
+
+La solución implementada no solo permite el análisis eficiente del sistema de transporte urbano de la ciudad de Nueva York, sino que además establece un marco arquitectónico reutilizable para futuros proyectos académicos y profesionales orientados al procesamiento masivo de datos.
+
+Finalmente, el trabajo desarrollado por el Grupo 3 consolida conocimientos teóricos mediante su aplicación práctica, fortaleciendo competencias clave en áreas como arquitectura distribuida, procesamiento paralelo, automatización de pipelines y analítica avanzada, elementos fundamentales en el campo actual de la ingeniería de datos.

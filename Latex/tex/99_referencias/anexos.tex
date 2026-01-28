@@ -1,0 +1,63 @@
+\section{Anexos}
+
+La presente sección recopila información complementaria que respalda el desarrollo técnico del proyecto. Estos anexos incluyen enlaces a los repositorios de código fuente, fuentes oficiales de datos y herramientas tecnológicas empleadas durante la implementación de la plataforma Big Data.
+
+\subsection{Repositorios de Código Fuente}
+
+El código fuente completo del proyecto, que abarca la infraestructura, los procesos de automatización, los pipelines de datos y las capas de aplicación, se encuentra disponible en repositorios de control de versiones administrados mediante Git.
+
+\begin{itemize}
+    \item \textbf{Repositorio Principal (Monorepo):}  
+    Contiene la configuración de orquestación Docker, los servicios de backend, el frontend del Dashboard y los distintos jobs de procesamiento en Apache Spark.
+
+    \begin{itemize}
+        \item URL: \url{https://github.com/Dennis290699/nyc-taxi-bigdata}
+    \end{itemize}
+\end{itemize}
+
+El uso de un enfoque \textit{monorepo} permitió centralizar la gestión del código, facilitar el versionamiento conjunto de los componentes y mantener coherencia entre las distintas capas del sistema.
+
+\subsection{Recursos de Datos}
+
+Los datos analizados en este proyecto provienen de fuentes oficiales de acceso público, garantizando transparencia, confiabilidad y reproducibilidad académica.
+
+\begin{itemize}
+    \item \textbf{Fuente Oficial de Datos:}  
+    NYC Taxi \& Limousine Commission (TLC) – Trip Record Data.
+
+    \begin{itemize}
+        \item URL: \url{https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page}
+    \end{itemize}
+
+    \item \textbf{Diccionario de Datos:}  
+    Documento oficial que describe la semántica de los campos, unidades de medida y codificaciones utilizadas en los registros de viaje de taxis amarillos.
+
+    \begin{itemize}
+        \item URL: \url{https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf}
+    \end{itemize}
+\end{itemize}
+
+Estos recursos fueron fundamentales para comprender la evolución histórica del esquema de datos y para garantizar la correcta interpretación analítica de los registros procesados.
+
+\subsection{Herramientas y Tecnologías Utilizadas}
+
+A continuación se detallan las principales herramientas, frameworks y plataformas empleadas durante el desarrollo del proyecto:
+
+\begin{itemize}
+    \item \textbf{Apache Spark:} Motor de procesamiento distribuido en memoria para análisis masivo de datos.  
+    \url{https://spark.apache.org/}
+
+    \item \textbf{Apache Hadoop:} Plataforma de almacenamiento distribuido mediante HDFS.  
+    \url{https://hadoop.apache.org/}
+
+    \item \textbf{Docker:} Tecnología de contenedorización utilizada para la orquestación del ecosistema distribuido.  
+    \url{https://www.docker.com/}
+
+    \item \textbf{Next.js:} Framework de desarrollo frontend basado en React para la construcción del Dashboard interactivo.  
+    \url{https://nextjs.org/}
+
+    \item \textbf{Tailwind CSS:} Framework de estilos utilitario para la construcción de interfaces modernas y responsivas.  
+    \url{https://tailwindcss.com/}
+\end{itemize}
+
+Las herramientas seleccionadas corresponden a estándares ampliamente utilizados en la industria de la ingeniería de datos y el desarrollo de software, lo que garantiza la alineación del proyecto con prácticas profesionales actuales.

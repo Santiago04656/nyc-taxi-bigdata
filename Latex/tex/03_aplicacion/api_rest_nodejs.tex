@@ -1,0 +1,123 @@
+\section{Capa de Servicio: API REST con Node.js}
+
+La capa de servicio constituye el componente de enlace entre el sistema de procesamiento distribuido y las aplicaciones de consumo final. En el presente proyecto, dicha capa ha sido implementada utilizando \textbf{Node.js} junto con el framework \textbf{Express}, seleccionados por su alto rendimiento en operaciones de entrada y salida no bloqueantes, su arquitectura orientada a eventos y su amplia adopción en sistemas de análisis de datos en tiempo real.
+
+La función principal de la API REST es facilitar el acceso controlado y eficiente a los resultados analíticos previamente generados por Apache Spark y almacenados en el Data Lake sobre HDFS, permitiendo que las aplicaciones cliente —principalmente el Dashboard de visualización— consuman información procesada sin interactuar directamente con la infraestructura Big Data.
+
+\subsection{Rol de la API dentro de la Arquitectura}
+
+Desde una perspectiva arquitectónica, la API REST cumple las siguientes responsabilidades:
+
+\begin{itemize}
+    \item abstraer la complejidad del sistema distribuido subyacente,
+    \item centralizar el acceso a los resultados analíticos,
+    \item proporcionar un contrato estable de comunicación HTTP,
+    \item garantizar desacoplamiento entre procesamiento y visualización,
+    \item optimizar los tiempos de respuesta al evitar cálculos en tiempo real.
+\end{itemize}
+
+Este enfoque favorece la escalabilidad del sistema, ya que permite evolucionar independientemente las capas de procesamiento, servicio y presentación.
+
+\subsection{Arquitectura del Servicio}
+
+El diseño arquitectónico adoptado sigue el patrón denominado \textit{Lectura Directa de Resultados Analíticos}. A diferencia de las arquitecturas tradicionales de tres capas —en las cuales la API consulta una base de datos relacional o NoSQL—, la solución propuesta elimina completamente la capa intermedia de persistencia operativa.
+
+La decisión de diseño fundamental fue evitar la duplicación innecesaria de datos. Dado que Apache Spark ejecuta previamente las tareas de limpieza, agregación y análisis, y persiste los resultados finales en archivos JSON optimizados dentro de HDFS, no existe justificación técnica para replicar dicha información en motores adicionales como PostgreSQL, MongoDB o ElasticSearch.
+
+En consecuencia, la API REST actúa únicamente como un servicio de lectura, encargado de localizar los archivos analíticos correspondientes y exponer su contenido a través de endpoints HTTP normalizados.
+
+Este enfoque aporta múltiples ventajas:
+
+\begin{itemize}
+    \item reducción del consumo de almacenamiento,
+    \item eliminación de procesos ETL adicionales,
+    \item disminución de la latencia del sistema,
+    \item simplificación del mantenimiento arquitectónico.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{assets/images/arquitectura_api_backend.png}
+    \caption{Diagrama de secuencia de la interacción entre la API REST y HDFS.}
+    \label{fig:arquitectura_api}
+\end{figure}
+
+\subsection{Estructura del Proyecto Backend}
+
+El backend ha sido desarrollado siguiendo principios de modularidad y separación de responsabilidades. El código fuente se organiza dentro del directorio \texttt{api/src}, lo que permite mejorar la mantenibilidad, facilitar la extensibilidad y simplificar las tareas de depuración.
+
+La estructura principal del proyecto se compone de los siguientes módulos:
+
+\begin{itemize}
+    \item \textbf{\texttt{app.js}:} punto de entrada de la aplicación. Inicializa el servidor Express, configura los middleware globales (CORS, manejo de errores y logging) y monta el enrutador principal bajo el prefijo \texttt{/api/v2}.
+
+    \item \textbf{\texttt{routes/dashboard.routes.js}:} define el contrato público de la API. Cada endpoint semántico se asocia a una ruta lógica de negocio, la cual se corresponde internamente con un archivo específico ubicado en HDFS.
+
+    \item \textbf{\texttt{services/hdfs.service.js}:} núcleo de la lógica del servicio. Este módulo encapsula completamente la interacción con el sistema de archivos distribuido mediante la librería \texttt{webhdfs}, gestionando:
+    \begin{itemize}
+        \item la conexión autenticada con el NameNode a través del puerto 9870,
+        \item la resolución automática de ubicaciones de bloques en los DataNodes,
+        \item la lectura de archivos mediante flujos de datos (\textit{streams}),
+        \item la transformación dinámica del formato NDJSON generado por Spark hacia arreglos JSON compatibles con JavaScript.
+    \end{itemize}
+\end{itemize}
+
+Esta separación garantiza que cualquier cambio en la infraestructura de almacenamiento no afecte a las rutas expuestas al cliente final.
+
+\subsection{Gestión del Rendimiento y Latencia}
+
+El uso de lectura por streaming permite que la API procese archivos de gran tamaño sin cargarlos completamente en memoria. Esta característica resulta fundamental al trabajar con resultados analíticos de millones de registros, asegurando:
+
+\begin{itemize}
+    \item bajo consumo de memoria RAM,
+    \item tiempos de respuesta estables,
+    \item escalabilidad horizontal del servicio.
+\end{itemize}
+
+Adicionalmente, el uso de métricas pre-agregadas garantiza que la API ejecute únicamente operaciones de lectura, evitando cálculos complejos durante la interacción con el usuario.
+
+\subsection{Catálogo de Endpoints Analíticos (Versión 2)}
+
+La versión 2 de la API expone un conjunto de endpoints diseñados específicamente para alimentar las visualizaciones del Dashboard analítico. Todos los endpoints retornan información en formato JSON estructurado.
+
+\subsubsection{Endpoint de Estado del Sistema}
+
+\texttt{GET /api/v2/system-stats}
+
+Este endpoint compuesto consolida información proveniente de múltiples fuentes con el objetivo de presentar una vista general del sistema. Incluye:
+
+\begin{enumerate}
+    \item \textbf{Salud del clúster:} consulta métricas JMX del NameNode para determinar nodos activos, bloques replicados y posibles inconsistencias.
+    \item \textbf{Uso de almacenamiento:} capacidad total, espacio utilizado y porcentaje disponible del Data Lake.
+    \item \textbf{Resumen del dataset:} número total de viajes procesados y rango temporal cubierto por la información analizada.
+\end{enumerate}
+
+\subsubsection{Endpoints Analíticos Principales}
+
+\begin{itemize}
+    \item \textbf{\texttt{/trips-over-time}:} devuelve la serie temporal diaria del volumen de viajes y la tarifa promedio.  
+    Fuente: \texttt{/data/nyc/analytics/v2/trips-over-time}.
+
+    \item \textbf{\texttt{/payment-stats}:} presenta la distribución porcentual de los métodos de pago utilizados (tarjeta, efectivo, otros).  
+    Fuente: \texttt{/data/nyc/analytics/v2/payment-stats}.
+
+    \item \textbf{\texttt{/top-zones}:} retorna el ranking de zonas de recogida con mayor demanda.  
+    Fuente: \texttt{/data/nyc/analytics/v2/top-zones}.
+
+    \item \textbf{\texttt{/tip-analysis}:} analiza la correlación entre distancia recorrida y porcentaje de propina otorgado.  
+    Fuente: \texttt{/data/nyc/analytics/v2/tip-analysis}.
+\end{itemize}
+
+\subsection{Ventajas de la Capa de Servicio Propuesta}
+
+La implementación de la API REST bajo este enfoque ofrece beneficios relevantes:
+
+\begin{itemize}
+    \item desacoplamiento total entre procesamiento y consumo,
+    \item eliminación de bases de datos intermedias,
+    \item reducción de costos operativos,
+    \item tiempos de respuesta en milisegundos,
+    \item simplicidad arquitectónica y claridad académica.
+\end{itemize}
+
+La capa de servicio se consolida así como un componente liviano, eficiente y altamente escalable dentro de la arquitectura Big Data desarrollada por el Grupo 3.

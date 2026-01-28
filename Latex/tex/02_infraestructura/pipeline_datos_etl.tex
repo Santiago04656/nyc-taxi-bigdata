@@ -1,0 +1,118 @@
+\section{Pipeline de Datos ETL}
+
+El procesamiento de la información dentro del proyecto se estructura mediante un pipeline ETL (Extracción, Transformación y Carga) robusto, automatizado y escalable. Este flujo constituye el eje central de la arquitectura Big Data, ya que permite convertir datos crudos provenientes de múltiples años en información analítica estructurada y lista para su consumo.
+
+El pipeline ha sido diseñado específicamente para manejar el volumen, la heterogeneidad y la evolución estructural de los datos publicados por la \textit{NYC Taxi \& Limousine Commission}, correspondientes al período comprendido entre los años 2009 y 2025. La complejidad temporal del conjunto de datos exige mecanismos capaces de procesar esquemas variables, grandes volúmenes históricos y cargas incrementales sin comprometer la integridad del sistema.
+
+\subsection{Diseño General del Pipeline}
+
+Desde una perspectiva funcional, el pipeline ETL se encuentra dividido en cuatro etapas principales:
+
+\begin{itemize}
+    \item \textbf{Ingesta y carga inicial de datos.}
+    \item \textbf{Limpieza y estandarización estructural.}
+    \item \textbf{Procesamiento analítico y agregación.}
+    \item \textbf{Automatización y actualización continua.}
+\end{itemize}
+
+Cada una de estas etapas se ejecuta de manera independiente, pero coordinada, lo que permite reejecutar procesos específicos sin afectar al flujo completo y facilita el mantenimiento del sistema.
+
+\subsection{Ingesta y Carga de Datos (Extract \& Load)}
+
+La fase de ingesta constituye el punto de entrada de los datos al ecosistema Big Data. Los archivos originales son recibidos en formato \texttt{Parquet}, el cual ofrece compresión eficiente, lectura columnar y compatibilidad nativa con Apache Spark.
+
+Dado que el conjunto de datos abarca más de una década de información histórica, la estrategia de carga implementada es incremental y recursiva, permitiendo añadir nuevos períodos sin necesidad de reprocesar el histórico completo.
+
+Para esta etapa se desarrollaron scripts de automatización, entre ellos \texttt{load\_new\_data.bat}, encargado de invocar el job de Spark \texttt{load\_to\_hdfs.py}. Este componente cumple las siguientes funciones:
+
+\begin{enumerate}
+    \item Escanea el directorio local de entrada (\texttt{data/raw}) en busca de nuevos archivos no procesados.
+    \item Preserva la estructura jerárquica original de los datos, organizados por año y mes, lo cual resulta esencial para mantener la trazabilidad cronológica del período 2009--2025.
+    \item Transfiere los archivos hacia el sistema de almacenamiento distribuido bajo la ruta:
+    \[
+        \texttt{/data/nyc/raw/taxi-trips}
+    \]
+    garantizando su disponibilidad para todos los nodos del clúster.
+\end{enumerate}
+
+Este enfoque permite desacoplar el origen de los datos del sistema de procesamiento, asegurando que cualquier nodo del clúster pueda acceder a la información de forma paralela.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{assets/images/flujo_etl_completo.png}
+    \caption{Diagrama de flujo \textit{End-to-End}: ingesta, procesamiento y consumo de datos.}
+    \label{fig:flujo_etl}
+\end{figure}
+
+\subsection{Limpieza y Estandarización de Datos (Transform)}
+
+La etapa de transformación representa el componente más crítico del pipeline, debido a la denominada \textit{evolución del esquema}. A lo largo de los 16 años de registros analizados, el dataset ha sufrido modificaciones significativas, tales como:
+
+\begin{itemize}
+    \item cambios en los nombres y tipos de columnas,
+    \item incorporación o eliminación de atributos,
+    \item transición de coordenadas GPS a identificadores de zonas,
+    \item variaciones en el modelo tarifario.
+\end{itemize}
+
+Para abordar esta problemática se implementó el job de Spark \texttt{clean\_data.py}, responsable de normalizar el histórico completo mediante los siguientes procesos:
+
+\begin{itemize}
+    \item \textbf{Validación de calidad de datos:} eliminación de registros inconsistentes, incluyendo distancias negativas, montos fuera de rango, tiempos de viaje nulos o valores atípicos extremos.
+    
+    \item \textbf{Estandarización de esquemas:} unificación de nombres de columnas, conversión de tipos de datos y creación de campos derivados que permiten homogenizar la estructura entre distintos períodos.
+    
+    \item \textbf{Tratamiento de valores nulos:} aplicación de reglas de imputación o descarte según la criticidad del atributo.
+    
+    \item \textbf{Persistencia de datos curados:} almacenamiento del conjunto limpio en la ruta:
+    \[
+        \texttt{/data/nyc/processed}
+    \]
+    la cual actúa como la denominada \textit{fuente única de la verdad} (\textit{Single Source of Truth}).
+\end{itemize}
+
+Esta capa garantiza que todos los análisis posteriores se realicen sobre datos confiables, consistentes y comparables a lo largo del tiempo.
+
+\subsection{Procesamiento Analítico y Agregación}
+
+Una vez estandarizados, los datos procesados son consumidos por los módulos analíticos implementados en los scripts \texttt{analytics\_basic.py} y \texttt{analytics\_advanced.py}.
+
+En lugar de ejecutar consultas pesadas en tiempo real, el sistema adopta una estrategia de \textbf{pre-agregación}, en la cual Apache Spark procesa el histórico completo para calcular métricas complejas de forma distribuida. Entre los principales indicadores generados se incluyen:
+
+\begin{itemize}
+    \item volumen de viajes por hora, día y mes,
+    \item distribución espacial por zonas,
+    \item análisis de métodos de pago,
+    \item tendencias temporales de ingresos,
+    \item patrones de demanda urbana.
+\end{itemize}
+
+Los resultados agregados representan un volumen de datos significativamente menor en comparación con los archivos crudos originales. Dichos resultados son almacenados en formato JSON optimizado dentro de HDFS, quedando disponibles para su consumo inmediato por la capa de servicios.
+
+\subsection{Automatización y Orquestación del Pipeline}
+
+Con el objetivo de garantizar confiabilidad, repetibilidad y mínima intervención manual, el pipeline ETL se encuentra completamente automatizado mediante una suite de scripts de orquestación.
+
+Entre los principales componentes se destacan:
+
+\begin{itemize}
+    \item \texttt{verify\_env.bat}: valida el estado de los contenedores Docker, la conectividad del clúster y la existencia de las rutas requeridas en HDFS antes de iniciar cualquier procesamiento.
+
+    \item \texttt{pipeline\_update.bat}: permite la actualización continua del sistema. Al incorporar un nuevo archivo mensual —por ejemplo, enero de 2025— el script desencadena automáticamente las fases de carga, limpieza y re-cálculo de métricas analíticas.
+\end{itemize}
+
+Este mecanismo garantiza que el Dashboard refleje siempre información actualizada sin necesidad de reprocesar el histórico completo, optimizando el uso de recursos computacionales.
+
+\subsection{Beneficios del Enfoque ETL Implementado}
+
+El pipeline ETL desarrollado aporta múltiples ventajas técnicas:
+
+\begin{itemize}
+    \item procesamiento distribuido y escalable,
+    \item manejo efectivo de esquemas evolutivos,
+    \item reducción significativa de latencia en consultas analíticas,
+    \item automatización completa del ciclo de datos,
+    \item trazabilidad y reproducibilidad académica.
+\end{itemize}
+
+Gracias a este enfoque, el sistema logra transformar datos masivos heterogéneos en información analítica estructurada, constituyendo un componente esencial para el correcto funcionamiento de la arquitectura Big Data propuesta.

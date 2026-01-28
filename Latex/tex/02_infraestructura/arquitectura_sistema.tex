@@ -1,0 +1,116 @@
+\section{Arquitectura del Sistema}
+
+La arquitectura de la solución propuesta ha sido diseñada bajo un enfoque modular y distribuido, alineado con los principios de las arquitecturas modernas de Big Data. El sistema se fundamenta en el uso de microservicios contenerizados, lo que permite el desacoplamiento funcional de los componentes, facilita su mantenimiento y habilita el escalamiento horizontal ante incrementos en el volumen de datos o en la carga de procesamiento.
+
+Esta arquitectura ha sido concebida para procesar el histórico completo de viajes de taxis de la ciudad de Nueva York correspondiente al período comprendido entre los años 2009 y 2025, el cual abarca múltiples terabytes de información estructurada en formato Parquet. Para ello, se integran tecnologías de código abierto especializadas en almacenamiento distribuido, procesamiento masivo en memoria y exposición de servicios analíticos.
+
+La solución adopta un modelo por capas que separa claramente las responsabilidades de infraestructura, almacenamiento, procesamiento y acceso a la información, lo cual contribuye a mejorar la escalabilidad, la observabilidad y la tolerancia a fallos del sistema.
+
+\subsection{Vista General de la Arquitectura}
+
+Desde una perspectiva lógica, la arquitectura se encuentra compuesta por las siguientes capas principales:
+
+\begin{itemize}
+    \item \textbf{Capa de Orquestación:} administración de contenedores y redes mediante Docker.
+    \item \textbf{Capa de Almacenamiento Distribuido:} persistencia de datos históricos utilizando Hadoop HDFS.
+    \item \textbf{Capa de Procesamiento:} ejecución de procesos ETL y analítica mediante Apache Spark.
+    \item \textbf{Capa de Servicio:} exposición de resultados analíticos a través de una API REST.
+    \item \textbf{Capa de Visualización:} consumo de métricas mediante un Dashboard interactivo.
+\end{itemize}
+
+Este enfoque por capas garantiza independencia tecnológica entre componentes y permite reemplazar o escalar módulos de forma individual sin afectar al funcionamiento global del sistema.
+
+\subsection{Orquestación con Docker}
+
+El núcleo de la infraestructura se sustenta en la virtualización a nivel de sistema operativo proporcionada por \textbf{Docker}. Cada componente de la arquitectura —HDFS, Spark y la API de servicios— se despliega como un contenedor independiente, lo que asegura aislamiento, reproducibilidad y portabilidad del entorno.
+
+Para la definición y administración del ecosistema multi-contenedor se utiliza \texttt{docker-compose}, permitiendo describir la infraestructura como código (\textit{Infrastructure as Code}). Esta estrategia garantiza que los entornos de desarrollo, pruebas y despliegue compartan la misma configuración, reduciendo errores asociados a dependencias o versiones inconsistentes.
+
+La red interna de Docker habilita la comunicación entre los nodos del clúster mediante resolución de nombres de servicio (DNS interno), evitando el uso de direcciones IP estáticas. De esta forma, el tráfico de datos permanece aislado del entorno externo, exponiendo únicamente los puertos estrictamente necesarios, tales como los de la API REST y las interfaces de monitoreo de los servicios.
+
+\subsection{Capa de Almacenamiento Distribuido (Hadoop HDFS)}
+
+Para la gestión del volumen masivo de datos históricos se implementó el \textbf{Hadoop Distributed File System (HDFS)}, diseñado específicamente para el almacenamiento confiable de grandes conjuntos de datos sobre hardware distribuido.
+
+HDFS permite dividir los archivos en bloques y replicarlos automáticamente en distintos nodos, garantizando tolerancia a fallos y alta disponibilidad. Esta característica resulta fundamental al manejar archivos Parquet de gran tamaño correspondientes a más de quince años de registros de viajes.
+
+\subsubsection{Hadoop NameNode}
+
+El \textit{NameNode} constituye el nodo maestro del sistema de archivos distribuido. Su responsabilidad principal es la gestión de los metadatos, incluyendo:
+
+\begin{itemize}
+    \item estructura del árbol de directorios,
+    \item ubicación de los bloques de datos,
+    \item permisos y políticas de acceso.
+\end{itemize}
+
+En la arquitectura implementada, el NameNode expone la interfaz \textit{WebHDFS} a través del puerto 9870, permitiendo la supervisión del clúster y el acceso controlado desde capas externas, sin interactuar directamente con los archivos crudos almacenados.
+
+\subsubsection{Hadoop DataNode}
+
+El \textit{DataNode} es responsable del almacenamiento físico de los bloques de datos. Cada nodo administra su espacio local y ejecuta operaciones de lectura y escritura bajo la coordinación del NameNode.
+
+Los DataNodes mantienen una comunicación permanente mediante señales de \textit{heartbeat}, reportando su estado de salud, capacidad disponible y bloques almacenados. En la configuración del sistema, la transferencia de datos se realiza a través del puerto 9864, asegurando la correcta replicación y disponibilidad de la información.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth, trim={0 0 0 0}, clip]{assets/images/arquitectura_despliegue.png}
+    \caption{Diagrama de despliegue de la arquitectura Docker y ecosistema Big Data.}
+    \label{fig:arquitectura_despliegue}
+\end{figure}
+
+\subsection{Capa de Procesamiento Distribuido (Apache Spark)}
+
+El procesamiento de datos se delega a \textbf{Apache Spark}, seleccionado por su arquitectura basada en cómputo en memoria, la cual permite ejecutar tareas analíticas con un rendimiento significativamente superior al modelo tradicional de MapReduce.
+
+Spark es utilizado tanto para los procesos ETL como para la generación de métricas analíticas pre-agregadas, reduciendo drásticamente los tiempos de respuesta requeridos por la capa de visualización.
+
+\subsubsection{Spark Master}
+
+El \textit{Spark Master} actúa como el coordinador central del clúster de procesamiento. Su función consiste en:
+
+\begin{itemize}
+    \item recibir los trabajos (\textit{jobs}) enviados por el sistema,
+    \item administrar los recursos disponibles,
+    \item asignar memoria y núcleos de CPU a los nodos trabajadores.
+\end{itemize}
+
+La interfaz web disponible en el puerto 8080 permite monitorear en tiempo real el estado de las aplicaciones, el uso de recursos y el rendimiento del clúster.
+
+\subsubsection{Spark Worker}
+
+Los \textit{Spark Workers} ejecutan las tareas distribuidas definidas en los procesos ETL y analíticos. Cada worker se encuentra configurado con múltiples núcleos de procesamiento, lo que habilita paralelismo tanto inter-nodo como intra-nodo.
+
+Esta configuración resulta esencial para el procesamiento eficiente de archivos particionados que contienen millones de registros de viajes, permitiendo ejecutar transformaciones, agregaciones y cálculos estadísticos de forma altamente paralela.
+
+\subsection{Capa de Persistencia Analítica}
+
+Una vez finalizado el procesamiento, los resultados generados por Spark son almacenados nuevamente en HDFS en formatos optimizados (JSON y Parquet), organizados por particiones temporales y temáticas.
+
+Esta estrategia de pre-agregación permite desacoplar el procesamiento pesado del consumo final, garantizando que las consultas del Dashboard no impacten el rendimiento del clúster de cómputo.
+
+\subsection{Capa de Aplicación y Servicios}
+
+Con el objetivo de facilitar el acceso a la información procesada, se implementó una capa de servicios liviana orientada al consumo analítico.
+
+\subsubsection{API REST con Node.js}
+
+La API REST fue desarrollada utilizando \textbf{Node.js} y el framework \textbf{Express}. Este componente actúa como intermediario entre el sistema Big Data y las aplicaciones cliente.
+
+Mediante el uso de la librería \texttt{webhdfs}, la API accede directamente a los archivos analíticos generados por Spark y almacenados en HDFS, transformándolos en respuestas JSON estructuradas.
+
+Gracias a este enfoque desacoplado, el Dashboard puede consultar métricas complejas con tiempos de respuesta del orden de milisegundos, dado que los cálculos intensivos ya fueron ejecutados previamente durante la fase de procesamiento distribuido.
+
+\subsection{Beneficios de la Arquitectura Propuesta}
+
+La arquitectura desarrollada ofrece múltiples ventajas técnicas y académicas:
+
+\begin{itemize}
+    \item Escalabilidad horizontal mediante adición de nodos.
+    \item Alta disponibilidad y tolerancia a fallos.
+    \item Separación clara de responsabilidades.
+    \item Facilidad de despliegue y replicabilidad.
+    \item Uso exclusivo de tecnologías de código abierto.
+\end{itemize}
+
+Estas características convierten la solución en una arquitectura de referencia aplicable a escenarios reales de análisis masivo de datos urbanos.

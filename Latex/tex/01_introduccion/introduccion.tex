@@ -1,0 +1,53 @@
+\section{Introducción}
+
+\subsection{Contexto}
+
+El acelerado proceso de digitalización que caracteriza a las ciudades modernas ha provocado un incremento exponencial en la generación de datos provenientes de múltiples fuentes, tales como sistemas de transporte, sensores urbanos, aplicaciones móviles y plataformas de servicios públicos. Este fenómeno ha dado origen al concepto de \textit{Smart Cities}, en el cual la información se convierte en un activo estratégico para la planificación, optimización y toma de decisiones basadas en evidencia.
+
+Dentro de este entorno, los sistemas de transporte urbano representan uno de los principales generadores de datos de alta frecuencia. La ciudad de Nueva York, reconocida por poseer una de las redes de movilidad más extensas y complejas del mundo, publica de manera abierta los registros históricos de viajes de taxis amarillos (\textit{Yellow Taxis}), los cuales contienen millones de transacciones anuales con información temporal, geoespacial, operativa y económica.
+
+Este conjunto de datos constituye un escenario ideal para la aplicación de tecnologías de Big Data, ya que permite analizar patrones de movilidad urbana, comportamiento de la demanda, distribución espacial de viajes y tendencias económicas del servicio. La magnitud, diversidad y evolución histórica de dichos registros convierten su procesamiento en un desafío técnico que supera las capacidades de los enfoques tradicionales de análisis de datos.
+
+En este contexto, el Grupo 3 desarrolla el presente proyecto como una iniciativa académica orientada al diseño e implementación de una solución integral de Big Data. El trabajo no se limita al análisis de los datos, sino que busca construir una arquitectura de referencia que demuestre cómo las tecnologías de código abierto pueden integrarse de manera coherente para resolver problemáticas reales de ingeniería de datos a gran escala.
+
+\subsection{Planteamiento del Problema}
+
+Las organizaciones que requieren analizar grandes volúmenes de datos históricos suelen enfrentar limitaciones significativas cuando dependen de sistemas de gestión de bases de datos relacionales tradicionales (RDBMS). Dichos sistemas fueron diseñados principalmente para cargas transaccionales, lo que restringe su desempeño frente a escenarios analíticos intensivos y distribuidos.
+
+Durante el análisis inicial del proyecto, el Grupo 3 identificó una serie de problemáticas críticas asociadas al uso de arquitecturas convencionales para el tratamiento del conjunto de datos de NYC Taxi, las cuales se enmarcan dentro de las tres dimensiones fundamentales del Big Data:
+
+\begin{itemize}
+    \item \textbf{Volumen:} El almacenamiento y procesamiento de millones de registros históricos, que alcanzan escalas de gigabytes y terabytes, excede la capacidad de escalamiento vertical de servidores individuales.
+    
+    \item \textbf{Velocidad:} La ejecución de consultas analíticas complejas sobre grandes volúmenes de información genera elevados tiempos de respuesta debido a la dependencia del acceso a disco y al procesamiento secuencial de datos.
+    
+    \item \textbf{Variedad:} La heterogeneidad de los formatos de origen y la evolución de los esquemas a lo largo del tiempo —por ejemplo, modificaciones en campos de geolocalización, tarifas o métodos de pago— dificultan los procesos de integración, limpieza y normalización de la información.
+\end{itemize}
+
+Estas limitaciones evidencian la necesidad de adoptar arquitecturas distribuidas que permitan paralelizar el almacenamiento y el procesamiento de los datos, garantizando escalabilidad horizontal, tolerancia a fallos y flexibilidad ante cambios estructurales.
+
+\subsection{Objetivos del Proyecto}
+
+\subsubsection{Objetivo General}
+
+Diseñar, implementar y desplegar una plataforma \textit{End-to-End} de Big Data, escalable y tolerante a fallos, capaz de ingerir, procesar, analizar y visualizar el conjunto de datos \textit{NYC Taxi Trip Record Data}, con el fin de extraer valor mediante técnicas de analítica descriptiva y análisis avanzado.
+
+\subsubsection{Objetivos Específicos}
+
+\begin{enumerate}
+    \item \textbf{Infraestructura:} Implementar un clúster distribuido utilizando contenedores Docker para la orquestación de servicios del ecosistema Hadoop, específicamente HDFS para almacenamiento distribuido y Apache Spark para el procesamiento paralelo de datos, garantizando alta disponibilidad y persistencia.
+
+    \item \textbf{Procesamiento (ETL):} Desarrollar pipelines de datos automatizados que permitan la ingesta, validación, limpieza y transformación de archivos en formato Parquet, gestionando inconsistencias de esquema y optimizando el rendimiento mediante técnicas de particionamiento y compresión.
+
+    \item \textbf{Analítica:} Generar métricas analíticas pre-agregadas tales como volumen de viajes por período temporal, zonas con mayor demanda, análisis de métodos de pago y comportamiento tarifario, aprovechando las capacidades de cómputo en memoria de Apache Spark.
+
+    \item \textbf{Visualización:} Construir una interfaz de visualización interactiva mediante un Dashboard web moderno, el cual consuma los datos procesados a través de una API REST, facilitando el acceso a la información y apoyando la toma de decisiones basada en datos.
+\end{enumerate}
+
+\subsection{Alcance}
+
+El alcance del presente proyecto comprende todas las etapas del ciclo de vida de una arquitectura de Big Data, desde la configuración de bajo nivel de la infraestructura distribuida hasta la implementación de la capa de presentación final.
+
+Específicamente, el trabajo incluye la definición y configuración de redes y contenedores Docker, la implementación de nodos HDFS, la ejecución de procesos de procesamiento distribuido en Spark, y el desarrollo de una capa de servicios backend basada en Node.js, junto con una interfaz frontend orientada a la visualización analítica.
+
+Asimismo, se contempla la elaboración de documentación técnica detallada, la justificación de las decisiones arquitectónicas adoptadas y el análisis de los resultados obtenidos a partir de la ingesta y procesamiento de los datos correspondientes a los años 2024 y 2025. El proyecto no aborda modelos predictivos avanzados ni aprendizaje automático, enfocándose principalmente en la analítica descriptiva y exploratoria como base para futuras extensiones.

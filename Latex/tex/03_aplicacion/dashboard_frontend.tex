@@ -1,0 +1,56 @@
+\section{Capa de Presentación: Dashboard Frontend}
+
+\subsection{Tecnologías y Framework}
+Para la interfaz de usuario, se seleccionó el framework \textbf{Next.js 14} (React), utilizando su moderna arquitectura basada en el "App Router". Esta elección proporciona renderizado del lado del servidor (SSR) para una carga inicial rápida y optimización automática de recursos.
+
+El diseño visual se implementó con \textbf{Tailwind CSS v4}, un framework de clases de utilidad que permite un desarrollo ágil y consistente. Para los componentes de interfaz (botones, tarjetas, menús), se utilizó la librería \textbf{shadcn/ui}, que ofrece componentes accesibles y altamente personalizables construidos sobre Radix UI. La visualización de datos se confió a \textbf{Recharts}, una librería de gráficos composables para React.
+
+\subsection{Estructura del Proyecto Frontend}
+La aplicación reside en el directorio \texttt{fronted} y sigue una estructura jerárquica clara:
+
+\begin{itemize}
+    \item \textbf{\texttt{app/}:} Contiene las rutas de la aplicación. Gracias al sistema de archivos de Next.js, cada carpeta representa una URL.
+    \begin{itemize}
+        \item \texttt{layout.tsx}: Define la estructura maestra, incluyendo la barra de navegación lateral (\texttt{Sidebar}) y el encabezado (\texttt{Navbar}), asegurando consistencia visual en todas las páginas.
+        \item \texttt{page.tsx}: La página de inicio que muestra el resumen ejecutivo y las estadísticas del clúster.
+        \item \texttt{[feature]/page.tsx}: Páginas dedicadas para cada análisis (ej. \texttt{payment-stats}, \texttt{trips-chart}).
+    \end{itemize}
+    \item \textbf{\texttt{components/}:} Bloques de construcción reutilizables.
+    \begin{itemize}
+        \item \texttt{charts/}: Componentes específicos que encapsulan la lógica de Recharts (ej. \texttt{PaymentPieChart}, \texttt{TripsAreaChart}).
+        \item \texttt{ui/}: Elementos atómicos como \texttt{Card}, \texttt{Button}, \texttt{Select}, provenientes de shadcn/ui.
+    \end{itemize}
+    \item \textbf{\texttt{lib/}:} Utilidades compartidas, incluyendo las definiciones de tipos TypeScript para garantizar la seguridad de tipos al consumir la API.
+\end{itemize}
+
+\subsection{Integración Backend-Frontend}
+La comunicación con la API Node.js se maneja mediante \texttt{fetch} y hooks de React. El flujo de datos típico es:
+
+\begin{enumerate}
+    \item El usuario navega a una vista (ej. "Análisis de Pagos").
+    \item El componente de página (\texttt{PaymentPage}) ejecuta un efecto de carga.
+    \item Se realiza una petición HTTP GET asíncrona a \texttt{http://localhost:3000/api
+    /v2/payment-stats}.
+    \item La API retorna los datos procesados en formato JSON.
+    \item El estado local de React se actualiza, disparando el renderizado de los gráficos de Recharts con animación fluida.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth, trim={0 0 0 0}, clip]{assets/images/flujo_frontend_data.png}
+    \caption{Diagrama de Flujo de Datos en el Frontend: De la API al Gráfico.}
+    \label{fig:flujo_frontend}
+\end{figure}
+
+\subsection{Jerarquía de Componentes Visuales}
+La interfaz se construye bajo una jerarquía estricta que separa la responsabilidad de \textit{Layout} (diseño) de la responsabilidad de \textit{Contenido}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{assets/images/jerarquia_componentes.png}
+    \caption{Árbol de Componentes de React: Layout vs. Páginas.}
+    \label{fig:jerarquia_componentes}
+\end{figure}
+
+\subsection{Personalización y Temas}
+Se implementó un sistema de variables CSS en \texttt{globals.css} que controla la paleta de colores globalmente. Esto facilita la implementación de temas (Modo Oscuro/Claro) y asegura que los colores de los gráficos coincidan con la identidad visual de la aplicación.

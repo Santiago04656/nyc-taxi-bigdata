@@ -1,0 +1,22 @@
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+
+En el contexto contemporáneo de la era digital, el crecimiento acelerado y sostenido de los datos generados por sistemas urbanos inteligentes ha dado lugar a nuevos desafíos para las arquitecturas tradicionales de almacenamiento y procesamiento de información. En particular, los sistemas de transporte urbano producen volúmenes masivos de datos caracterizados por su alta frecuencia, heterogeneidad y complejidad, lo que exige el uso de tecnologías especializadas capaces de gestionar escenarios de Big Data de manera eficiente.
+
+En este marco, el Grupo 3 presenta el diseño, desarrollo e implementación de una solución integral \textit{End-to-End} orientada al procesamiento de grandes volúmenes de datos, tomando como caso de estudio los registros históricos de viajes de taxis de la ciudad de Nueva York. Dichos datos comprenden millones de transacciones que incluyen información temporal, geoespacial y financiera, convirtiéndose en una fuente idónea para el análisis analítico a gran escala.
+
+La problemática principal abordada radica en las limitaciones inherentes de los sistemas de bases de datos relacionales y arquitecturas monolíticas, las cuales no fueron concebidas para manejar las tres dimensiones fundamentales del Big Data: volumen, velocidad y variedad. Frente a estas restricciones, el grupo diseñó una arquitectura distribuida, escalable y tolerante a fallos, basada en tecnologías de código abierto y orquestada mediante contenedores Docker, lo que permitió garantizar portabilidad, aislamiento y facilidad de despliegue.
+
+La solución implementada integra \textbf{Hadoop HDFS} como sistema de almacenamiento distribuido, encargado de asegurar la persistencia y replicación de los datos, junto con \textbf{Apache Spark} como motor principal de procesamiento masivo en memoria, optimizando los tiempos de ejecución y habilitando el análisis de datos a gran escala. Esta combinación permitió ejecutar transformaciones complejas, agregaciones y cálculos estadísticos de forma paralela y eficiente.
+
+El desarrollo del proyecto se estructuró en fases estratégicas. En una etapa inicial, se priorizó la estabilización del entorno distribuido, resolviendo incidencias de conectividad entre nodos, sincronización de servicios y configuración de volúmenes compartidos. Paralelamente, se implementaron procesos automatizados de ETL (Extracción, Transformación y Carga), acompañados de scripts de limpieza y normalización de datos refactorizados para manejar inconsistencias, valores nulos y cambios en los esquemas de origen.
+
+Posteriormente, el sistema evolucionó hacia una plataforma analítica de alto rendimiento orientada a la explotación de la información. Mediante técnicas de pre-agregación y optimización en Spark, se generaron indicadores clave tales como series temporales de viajes, análisis de métodos de pago, patrones de demanda y distribución espacial por zonas. Estos resultados fueron almacenados en estructuras optimizadas para su consumo eficiente.
+
+Como capa final, se desarrolló una interfaz de servicios basada en una \textbf{API REST implementada con Node.js}, la cual actúa como intermediario entre el sistema de procesamiento y las aplicaciones cliente. Esta API permite la consulta de datos analíticos en tiempos de respuesta del orden de milisegundos, facilitando la integración con un Dashboard interactivo orientado a la visualización dinámica y a la toma de decisiones basada en datos.
+
+El resultado final es una arquitectura robusta, modular y observable que no solo responde de manera efectiva al desafío técnico del procesamiento de grandes volúmenes de información, sino que también constituye una referencia académica sobre la aplicación de buenas prácticas en sistemas distribuidos. El proyecto evidencia la capacidad del Grupo 3 para integrar tecnologías complejas de Big Data en una solución coherente, funcional y alineada con los estándares actuales de la ingeniería de software y la analítica de datos.
+
+\vspace{1cm}
+
+\textbf{Palabras clave:} Big Data, Hadoop, Apache Spark, Docker, ETL, Arquitectura Distribuida, API REST, Analítica de Datos, NYC Taxi.
